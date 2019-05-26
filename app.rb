@@ -3,6 +3,7 @@ class App
 
   def call(env)
     @query = Rack::Utils.parse_nested_query(env['QUERY_STRING'])
+    @path = env['REQUEST_PATH']
     @body = []
     validate_params
     [@status, headers, @body]
@@ -11,7 +12,7 @@ class App
   private
 
   def validate_params
-    if !@query.key?('format')
+    if !@query.key?('format') || @path != '/time'
       @status = 404
       @body << "Wrong url\n"
     elsif !check_format
