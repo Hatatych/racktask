@@ -1,22 +1,10 @@
 class TimeFormatter
-  PERMITTED_FORMATS = %w[year month day hour min sec].freeze
-
   def call(formats)
-    @formats = formats.split(',')
-    return 200, format_time if formats_valid?
-
-    [400, "Unknown format: #{@errors.inspect}\n"]
+    @formats = formats
+    format_time
   end
 
   private
-
-  def formats_valid?
-    @errors = []
-    @formats.each { |format| @errors << format unless PERMITTED_FORMATS.include?(format) }
-    return false if @errors.any?
-
-    true
-  end
 
   def format_time
     filtered_formats = []
