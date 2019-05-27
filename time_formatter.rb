@@ -1,17 +1,18 @@
 class TimeFormatter
   PERMITTED_FORMATS = %w[year month day hour min sec].freeze
-  attr_reader :errors, :result
+  attr_reader :errors
 
-  def call(formats)
+  def initialize(formats)
     @formats = formats.split(',')
-    return format_time if formats_valid?
-
-    false
   end
 
-  private
+  def call
+    return format_time if valid?
 
-  def formats_valid?
+    nil
+  end
+
+  def valid?
     @errors = []
     @formats.each { |format| @errors << format unless PERMITTED_FORMATS.include?(format) }
     return false if @errors.any?
@@ -19,10 +20,11 @@ class TimeFormatter
     true
   end
 
+  private
+
   def format_time
     filtered_formats = []
     @formats.each { |format| filtered_formats << Time.now.send(format.to_sym) }
     @result = filtered_formats.join('-') + "\n"
-    true
   end
 end

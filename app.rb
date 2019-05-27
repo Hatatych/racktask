@@ -4,20 +4,11 @@ class App
   def call(env)
     @query = Rack::Utils.parse_nested_query(env['QUERY_STRING'])
     @path = env['REQUEST_PATH']
-    @time_formatter = TimeFormatter.new
     if url_valid?
-      if @time_formatter.call(@query['format'])
-        @status = 200
-        @body = @time_formatter.result
-      else
-        @status = 400
-        @body = "Wrong format: #{@time_formatter.errors.inspect}\n"
-      end
+      handle_valid_request
     else
-      @status = 404
-      @body = "Wrong url\n"
+      handle_invalid_request
     end
-    Rack::Response.new([@body], @status, headers)
   end
 
   private
@@ -26,6 +17,19 @@ class App
     return false if !@query.key?('format') || @path != '/time'
 
     true
+  end
+
+  def handle_invalid_request
+    Rack::Response.new(["Wrong url\n"], 404, headers).finish
+  end
+
+  def handle_valid_request
+    format = TimeFormatter.new(@query['format'])
+    if format.valid?
+      Rack::Response.new([format.call], 200, headers).finish
+    else
+      Rack::Response.new(["Wrong format: #{format.errors.inspect}\n"], 400, headers).finish
+    end
   end
 
   def headers
