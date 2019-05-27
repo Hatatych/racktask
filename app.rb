@@ -1,42 +1,24 @@
-class App
-  PERMITTED_PARAMS = %w[year month day hour min sec].freeze
+require_relative 'time_formatter'
 
+class App
   def call(env)
     @query = Rack::Utils.parse_nested_query(env['QUERY_STRING'])
     @path = env['REQUEST_PATH']
-    @body = []
-    validate_params
-    [@status, headers, @body]
+    if url_valid?
+      @status, @body = TimeFormatter.new.call(@query['format'])
+    else
+      @status = 404
+      @body = "Wrong url\n"
+    end
+    Rack::Response.new([@body], @status, headers)
   end
 
   private
 
-  def validate_params
-    if !@query.key?('format') || @path != '/time'
-      @status = 404
-      @body << "Wrong url\n"
-    elsif !check_format
-      @status = 400
-      @body << "Unknown time format: #{@errors.inspect}\n"
-    else
-      @status = 200
-      generate_response
-    end
-  end
-
-  def check_format
-    @errors = []
-    @params = @query['format'].split(',')
-    @params.each { |param| @errors << param unless PERMITTED_PARAMS.include?(param) }
-    return false if @errors.any?
+  def url_valid?
+    return false if !@query.key?('format') || @path != '/time'
 
     true
-  end
-
-  def generate_response
-    filtered_params = []
-    @params.each { |param| filtered_params << Time.now.send(param.to_sym) }
-    @body << filtered_params.join('-') + "\n"
   end
 
   def headers
