@@ -1,18 +1,17 @@
 require_relative 'time_formatter'
 
 class App
-  PERMITTED_FORMATS = %w[year month day hour min sec].freeze
-
   def call(env)
     @query = Rack::Utils.parse_nested_query(env['QUERY_STRING'])
     @path = env['REQUEST_PATH']
+    @time_formatter = TimeFormatter.new
     if url_valid?
-      if formats_valid?
+      if @time_formatter.call(@query['format'])
         @status = 200
-        @body = TimeFormatter.new.call(@formats)
+        @body = @time_formatter.result
       else
         @status = 400
-        @body = "Unknown format: #{@errors.inspect}\n"
+        @body = "Wrong format: #{@time_formatter.errors.inspect}\n"
       end
     else
       @status = 404
@@ -25,15 +24,6 @@ class App
 
   def url_valid?
     return false if !@query.key?('format') || @path != '/time'
-
-    true
-  end
-
-  def formats_valid?
-    @errors = []
-    @formats = @query['format'].split(',')
-    @formats.each { |format| @errors << format unless PERMITTED_FORMATS.include?(format) }
-    return false if @errors.any?
 
     true
   end
